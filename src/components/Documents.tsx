@@ -6,16 +6,19 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { FileText, CheckCircle, PencilLine } from '@phosphor-icons/react'
 import { Document } from '@/types/discharge'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { SignaturePad } from '@/components/SignaturePad'
 
 interface DocumentsProps {
   documents: Document[]
-  onSign: (docId: string) => void
+  onSign: (docId: string, signatureData: string) => void
   disabled?: boolean
 }
 
 export function Documents({ documents, onSign, disabled }: DocumentsProps) {
   const [selectedDoc, setSelectedDoc] = useState<string | null>(null)
+  const [showSignaturePad, setShowSignaturePad] = useState(false)
+  const [currentDocToSign, setCurrentDocToSign] = useState<Document | null>(null)
 
   const groupedDocs = documents.reduce((acc, doc) => {
     if (!acc[doc.category]) {
@@ -85,21 +88,36 @@ export function Documents({ documents, onSign, disabled }: DocumentsProps) {
                           {doc.required && !doc.signed && (
                             <p className="text-xs text-muted-foreground">Required</p>
                           )}
+                          {doc.signed && doc.signedAt && (
+                            <p className="text-xs text-muted-foreground">
+                              Signed {new Date(doc.signedAt).toLocaleString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                hour: 'numeric', 
+                                minute: '2-digit' 
+                              })}
+                            </p>
+                          )}
                         </div>
+                        {doc.signed && doc.signatureData && (
+                          <div className="ml-2">
+                            <img 
+                              src={doc.signatureData} 
+                              alt="Signature" 
+                              className="h-8 w-16 object-contain border border-border rounded bg-card"
+                            />
+                          </div>
+                        )}
                       </div>
                       {!doc.signed && (
                         <Button
                           size="sm"
                           onClick={() => {
-                            setSelectedDoc(doc.id)
-                            setTimeout(() => {
-                              onSign(doc.id)
-                              setSelectedDoc(null)
-                            }, 1500)
+                            setCurrentDocToSign(doc)
+                            setShowSignaturePad(true)
                           }}
-                          disabled={selectedDoc === doc.id}
                         >
-                          {selectedDoc === doc.id ? 'Signing...' : 'Sign'}
+                          Sign
                         </Button>
                       )}
                       {doc.signed && (
@@ -129,6 +147,23 @@ export function Documents({ documents, onSign, disabled }: DocumentsProps) {
           </motion.div>
         )}
       </CardContent>
+
+      <AnimatePresence>
+        {showSignaturePad && currentDocToSign && (
+          <SignaturePad
+            documentTitle={currentDocToSign.title}
+            onSave={(signatureData) => {
+              onSign(currentDocToSign.id, signatureData)
+              setShowSignaturePad(false)
+              setCurrentDocToSign(null)
+            }}
+            onCancel={() => {
+              setShowSignaturePad(false)
+              setCurrentDocToSign(null)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </Card>
   )
 }

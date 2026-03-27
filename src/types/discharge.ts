@@ -31,4 +31,6 @@ export interface Document {
   category: 'legal' | 'medical' | 'financial'
   signed: boolean
   required: boolean
+  signatureData?: string
+  signedAt?: string
 }

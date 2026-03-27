@@ -71,11 +71,11 @@ function App() {
     },
   ]
 
-  const handleSignDocument = (docId: string) => {
+  const handleSignDocument = (docId: string, signatureData: string) => {
     setDocuments((currentDocs) => {
       if (!currentDocs) return []
       return currentDocs.map((doc) =>
-        doc.id === docId ? { ...doc, signed: true } : doc
+        doc.id === docId ? { ...doc, signed: true, signatureData, signedAt: new Date().toISOString() } : doc
       )
     })
     toast.success('Document signed successfully')
