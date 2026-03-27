@@ -13,9 +13,10 @@ interface DocumentsProps {
   documents: Document[]
   onSign: (docId: string, signatureData: string) => void
   disabled?: boolean
+  patientName?: string
 }
 
-export function Documents({ documents, onSign, disabled }: DocumentsProps) {
+export function Documents({ documents, onSign, disabled, patientName }: DocumentsProps) {
   const [selectedDoc, setSelectedDoc] = useState<string | null>(null)
   const [showSignaturePad, setShowSignaturePad] = useState(false)
   const [currentDocToSign, setCurrentDocToSign] = useState<Document | null>(null)
@@ -152,6 +153,7 @@ export function Documents({ documents, onSign, disabled }: DocumentsProps) {
         {showSignaturePad && currentDocToSign && (
           <SignaturePad
             documentTitle={currentDocToSign.title}
+            patientName={patientName}
             onSave={(signatureData) => {
               onSign(currentDocToSign.id, signatureData)
               setShowSignaturePad(false)

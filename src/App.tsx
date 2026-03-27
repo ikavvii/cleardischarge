@@ -123,6 +123,7 @@ function App() {
                   documents={documents}
                   onSign={handleSignDocument}
                   disabled={currentStep !== 'documents'}
+                  patientName={patient.name}
                 />
               )}
 

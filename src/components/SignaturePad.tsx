@@ -1,20 +1,27 @@
 import { useRef, useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ArrowClockwise, Check, X } from '@phosphor-icons/react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { ArrowClockwise, Check, X, Warning } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 
 interface SignaturePadProps {
   onSave: (signature: string) => void
   onCancel: () => void
   documentTitle: string
+  patientName?: string
 }
 
-export function SignaturePad({ onSave, onCancel, documentTitle }: SignaturePadProps) {
+export function SignaturePad({ onSave, onCancel, documentTitle, patientName }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [hasDrawn, setHasDrawn] = useState(false)
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null)
+  const [signerName, setSignerName] = useState('')
+  const [currentDate, setCurrentDate] = useState('')
+  const [nameError, setNameError] = useState(false)
+  const [dateError, setDateError] = useState(false)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -37,6 +44,9 @@ export function SignaturePad({ onSave, onCancel, documentTitle }: SignaturePadPr
     ctx.lineJoin = 'round'
 
     setContext(ctx)
+
+    const today = new Date().toISOString().split('T')[0]
+    setCurrentDate(today)
   }, [])
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -80,9 +90,30 @@ export function SignaturePad({ onSave, onCancel, documentTitle }: SignaturePadPr
 
   const saveSignature = () => {
     if (!canvasRef.current || !hasDrawn) return
+    
+    setNameError(false)
+    setDateError(false)
+    
+    if (!signerName.trim()) {
+      setNameError(true)
+      return
+    }
+    
+    if (!currentDate) {
+      setDateError(true)
+      return
+    }
+
+    if (patientName && signerName.trim().toLowerCase() !== patientName.toLowerCase()) {
+      setNameError(true)
+      return
+    }
+    
     const dataUrl = canvasRef.current.toDataURL('image/png')
     onSave(dataUrl)
   }
+
+  const isFormValid = hasDrawn && signerName.trim() && currentDate
 
   return (
     <motion.div
@@ -100,7 +131,58 @@ export function SignaturePad({ onSave, onCancel, documentTitle }: SignaturePadPr
           <p className="text-sm text-muted-foreground">{documentTitle}</p>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="signer-name" className="text-sm font-medium">
+                Full Name {patientName && <span className="text-xs text-muted-foreground">({patientName})</span>}
+              </Label>
+              <Input
+                id="signer-name"
+                type="text"
+                placeholder="Enter your full name"
+                value={signerName}
+                onChange={(e) => {
+                  setSignerName(e.target.value)
+                  setNameError(false)
+                }}
+                className={nameError ? 'border-destructive focus-visible:ring-destructive' : ''}
+              />
+              {nameError && (
+                <div className="flex items-center gap-1.5 text-xs text-destructive">
+                  <Warning size={14} weight="fill" />
+                  <span>
+                    {patientName && signerName.trim() && signerName.trim().toLowerCase() !== patientName.toLowerCase()
+                      ? `Name must match patient name: ${patientName}`
+                      : 'Please enter your full name'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="signature-date" className="text-sm font-medium">
+                Date
+              </Label>
+              <Input
+                id="signature-date"
+                type="date"
+                value={currentDate}
+                onChange={(e) => {
+                  setCurrentDate(e.target.value)
+                  setDateError(false)
+                }}
+                className={dateError ? 'border-destructive focus-visible:ring-destructive' : ''}
+              />
+              {dateError && (
+                <div className="flex items-center gap-1.5 text-xs text-destructive">
+                  <Warning size={14} weight="fill" />
+                  <span>Please select a date</span>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="relative">
             <canvas
               ref={canvasRef}
@@ -150,7 +232,7 @@ export function SignaturePad({ onSave, onCancel, documentTitle }: SignaturePadPr
             </Button>
             <Button
               onClick={saveSignature}
-              disabled={!hasDrawn}
+              disabled={!isFormValid}
               className="gap-2"
             >
               <Check size={16} />
