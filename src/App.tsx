@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useKV } from '@github/spark/hooks'
 import { Toaster } from '@/components/ui/sonner'
 import { PatientHeader } from '@/components/PatientHeader'
 import { Timeline } from '@/components/Timeline'
@@ -10,8 +9,8 @@ import { DischargeStep, PatientInfo, InsuranceInfo, Document } from '@/types/dis
 import { toast } from 'sonner'
 
 function App() {
-  const [currentStep, setCurrentStep] = useKV<string>('current-step', 'insurance')
-  const [documents, setDocuments] = useKV<Document[]>('documents', [
+  const [currentStep, setCurrentStep] = useState<string>('documents')
+  const [documents, setDocuments] = useState<Document[]>([
     { id: '1', title: 'Discharge Summary', category: 'medical', signed: false, required: true },
     { id: '2', title: 'Post-Op Care Instructions', category: 'medical', signed: false, required: true },
     { id: '3', title: 'Medication Guidelines', category: 'medical', signed: false, required: true },
